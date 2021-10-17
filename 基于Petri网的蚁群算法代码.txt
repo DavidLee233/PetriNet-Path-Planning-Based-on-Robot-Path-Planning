@@ -1,0 +1,210 @@
+附录C 基于蚁群算法的时延库所Petri网路径规划代码
+1.	clc
+2.	clear
+3.	%%初始化标识和节点变迁%%
+4.	nodes_data=cell(0);
+5.	M_1=[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]; %网中25个标识对应的符号
+6.	M_2=[0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+7.	M_3=[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+8.	M_4=[0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+9.	M_5=[0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+10.	M_6=[0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+11.	M_7=[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+12.	M_8=[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+13.	M_9=[0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+14.	M_10=[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+15.	M_11=[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+16.	M_12=[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0];
+17.	M_13=[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0];
+18.	M_14=[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0];
+19.	M_15=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0];
+20.	M_16=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0];
+21.	M_17=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0];
+22.	M_18=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0];
+23.	M_19=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0];
+24.	M_20=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0];
+25.	M_21=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0];
+26.	M_22=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0];
+27.	M_23=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0];
+28.	M_24=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0];
+29.	M_25=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1];
+30.	nodes_data(1,:)={1,[2,3],[1,1],[M_2;M_3]};  %根据变迁的邻近变迁的发生权构造变迁元胞组（其中第二列代表此变迁发生后哪些变迁会发生，第三列代表此变迁到下一个变迁需要走过的路径距离，第四列代表此变迁到下一个变迁之后标识会更新到什么状态）
+31.	nodes_data(2,:)={2,[4,5],[1,sqrt(2)],[M_4;M_5]};
+32.	nodes_data(3,:)={3,[6],[1],[M_6]};
+33.	nodes_data(4,:)={4,[7,8],[sqrt(2),1],[M_7;M_5]};
+34.	nodes_data(5,:)={5,[9,10],[sqrt(2),1],[M_8;M_7]};
+35.	nodes_data(6,:)={6,[11,12],[1,sqrt(2)],[M_9;M_10]};
+36.	nodes_data(7,:)={7,[13,14],[1,1],[M_8;M_13]};
+37.	nodes_data(8,:)={8,[9,10],[sqrt(2),1],[M_8;M_7]};
+38.	nodes_data(9,:)={9,[15],[1],[M_18]};
+39.	nodes_data(10,:)={10,[13,14],[1,1],[M_8;M_13]};
+40.	nodes_data(11,:)={11,[16,17],[1,1],[M_10;M_11]};
+41.	nodes_data(12,:)={12,[18],[1],[M_12]};
+42.	nodes_data(13,:)={13,[15],[1],[M_18]};
+43.	nodes_data(14,:)={14,[23,24],[sqrt(2),1],[M_14;M_15]};
+44.	nodes_data(15,:)={15,[29],[1],[M_19]};
+45.	nodes_data(16,:)={16,[18],[1],[M_12]};
+46.	nodes_data(17,:)={17,[19,20],[1,sqrt(2)],[M_16;M_17]};
+47.	nodes_data(18,:)={18,[21,22],[1,sqrt(2)],[M_18;M_19]};
+48.	nodes_data(19,:)={19,[27],[1],[M_17]};
+49.	nodes_data(20,:)={20,[28],[1],[M_20]};
+50.	nodes_data(21,:)={21,[29],[1],[M_19]};
+51.	nodes_data(22,:)={22,[30,31],[1,sqrt(2)],[M_23;M_24]};
+52.	nodes_data(23,:)={23,[25],[1],[M_21]};
+53.	nodes_data(24,:)={24,[26],[1],[M_14]};
+54.	nodes_data(25,:)={25,[33],[1],[M_22]};
+55.	nodes_data(26,:)={26,[25],[1],[M_21]};
+56.	nodes_data(27,:)={27,[28],[1],[M_20]};
+57.	nodes_data(28,:)={28,[32],[1],[M_23]};
+58.	nodes_data(29,:)={29,[30,31],[1,sqrt(2)],[M_23;M_24]};
+59.	nodes_data(30,:)={30,[35],[1],[M_24]};
+60.	nodes_data(31,:)={31,[36],[1],[M_25]};
+61.	nodes_data(32,:)={32,[35],[1],[M_24]};
+62.	nodes_data(33,:)={33,[34],[1],[M_25]};
+63.	nodes_data(35,:)={35,[36],[1],[M_25]};
+64.	%% 始末节点%%
+65.	node_start=1;
+66.	node_end=[33,36];
+67.	%%% 蚁群定义%%%%%
+68.	m=50;                              % 蚂蚁数量
+69.	n=size(nodes_data,1);                 % 节点数量
+70.	alpha=1;                            % 信息素重要程度因子
+71.	beta=5;                             % 启发函数重要程度因子
+72.	Rho=0.5;                            % 信息素挥发因子
+73.	Q=1;                             % 信息素增加强度系数
+74.	%%迭代过程初始化定义%%%%
+75.	iter=1;                             % 迭代次数初值
+76.	iter_max=100;                       % 最大迭代次数
+77.	Route_best=cell(iter_max,1);           % 各代最佳路径
+78.	Length_best=zeros(iter_max,1);         % 各代最佳路径长度
+79.	Length_ave=zeros(iter_max,1);         % 各代路径平均长度
+80.	Place_best=cell(iter_max,1);           % 各代最佳路径访问的库所
+81.	%%将信息素、挥发因子一并放入nodes_data中%%%%%
+82.	Delta_Tau_initial=nodes_data(:,1:2);
+83.	for i=1:size(nodes_data,1)
+84.	    nodes_data{i,5}=ones(1,length(nodes_data{i,3}));      % 初始信息素均设置为1
+85.	    nodes_data{i,6}=1./nodes_data{i,3};                 % 启发函数设置为距离的倒数
+86.	    Delta_Tau_initial{i,3}=zeros(1,length(nodes_data{i,3})); % 信息素变化量均为0
+87.	end
+88.	%% 迭代寻找最佳路径%%%
+89.	while iter<iter_max
+90.	    route=cell(0);
+91.	    place=cell(0);
+92.	    for i=1:m                              % 逐个蚂蚁进行路劲选择
+93.	        neighbor_allow=cell(0);
+94.	        node_step=node_start;
+95.	        path=node_step;
+96.	        path_M = 0;
+97.	        if node_step==node_start
+98.	            marking=M_1;
+99.	        else
+100.	            marking=nodes_data{node_step,4};
+101.	        end
+102.	        dist=0;
+103.	        while ~isequal(marking(end,:), M_25)
+104.	            neighbor=nodes_data{node_step,2};   % 寻找邻近节点  
+105.	            neighbor_allow = [];
+106.	            for k=1:length(neighbor)
+107.	                if ~ismember(neighbor(k),path)
+108.	                    neighbor_allow(end+1) = neighbor(k);
+109.	                end
+110.	            end           
+111.	            if isempty(neighbor_allow)
+112.	                neighbor_allow=cell(0);
+113.	                node_step=node_start;
+114.	                path=node_step;
+115.	                if node_step==node_start
+116.	                    marking=M_1;
+117.	                else
+118.	                    marking=nodes_data{node_step,4};
+119.	                end
+120.	                dist=0;
+121.	                continue
+122.	            end
+123.	            P=neighbor_allow;         %计算下一个节点的访问概率
+124.	            for k=1:length(neighbor_allow)
+125.	            idx = find(neighbor_allow(k) == nodes_data{node_step,2});
+126.	                P(2,k)=nodes_data{node_step,5}(idx)^alpha*nodes_data{node_step,6}(idx)^beta;
+127.	            end
+128.	            P(2,:)=P(2,:)/sum(P(2,:));
+129.	            %%轮盘赌法选择下一个访问节点%%%%
+130.	            Pc=cumsum(P(2,:));
+131.	            Pc=[0,Pc];
+132.	            randnum=rand;
+133.	            for k=1:length(Pc)-1
+134.	                if randnum>Pc(k)&&randnum<Pc(k+1)
+135.	                    target_node=neighbor_allow(k);
+136.	                end
+137.	            end
+138.	            %%%计算单步距离%%%
+139.	            idx=find(nodes_data{node_step,2}==target_node);
+140.	            dist=dist+nodes_data{node_step,3}(idx);
+141.	            %%%更新路径、节点以及标识%%%
+142.	            path(end+1)=target_node;                % 更新路径集合
+143.	      marking(end+1,:)=nodes_data{node_step,4}(idx,:);  % 更新标识
+144.	            node_step=target_node;       % 更新下一个目标节点变迁
+145.	        end
+146.	        Length(i,1)=dist;      % 存放第i只蚂蚁的累计距离和对应路径
+147.	        route{i,1}=path;
+148.	        place{i,1}=marking;
+149.	    end
+150.	    %%计算这一代的m只蚂蚁中最短距离和对应路径%%%
+151.	    if iter==1
+152.	        [min_Length,min_index]=min(Length);
+153.	        Length_best(iter)=min_Length;
+154.	        Length_ave(iter)=mean(Length);
+155.	        Route_best{iter,1}=route{min_index,1};
+156.	        Place_best(iter,1)=place(min_index,1);
+157.	    else
+158.	        [min_Length,min_index]=min(Length);
+159.	        Length_best(iter)=min(Length_best(iter-1),min_Length);
+160.	        Length_ave(iter)=mean(Length);
+161.	        if Length_best(iter)==min_Length
+162.	            Route_best{iter,1}=route{min_index,1};
+163.	            Place_best(iter,1)=place(min_index,1);
+164.	        else
+165.	            Route_best{iter,1}=Route_best{iter-1,1};
+166.	            Place_best(iter,1)=Place_best(iter-1,1);
+167.	        end
+168.	    end
+169.	    %%%更新信息素%%%
+170.	    Delta_Tau=Delta_Tau_initial;
+171.	    For i=1:m                             % 逐个蚂蚁计算
+172.	        for j=1:length(route{i,1})-1
+173.	            node_start_temp=route{i,1}(j);
+174.	            node_end_temp=route{i,1}(j+1);
+175.	            idx=find(Delta_Tau{node_start_temp,2}==node_end_temp);
+176.	       Delta_Tau{node_start_temp,3}(idx)=Delta_Tau{node_start_temp,3}(idx)+Q/Length(i);
+177.	        end
+178.	    end
+179.	    %%考虑挥发因子，更新信息素%%%
+180.	    for i=1:size(nodes_data,1)
+181.	        nodes_data{i,5}=(1-Rho)*nodes_data{i,5}+Delta_Tau{i,3};
+182.	    end
+183.	    iter=iter+1;
+184.	end
+185.	% %绘图、结果%%%
+186.	figure
+187.	plot(1:iter_max,Length_best,'b',1:iter_max,Length_ave,'r');
+188.	legend('最短距离','平均距离');
+189.	xlabel('迭代次数');
+190.	ylabel('距离');
+191.	title('各代最短距离与平均距离对比');
+192.	%% 最优路径%%%
+193.	[dist_min,idx]=min(Length_best(1:end-1));
+194.	path_opt=Route_best{idx,1};
+195.	marking_opt=Place_best{idx,1};
+196.	%%将marking_opt转为字符输出%%%
+197.	M_set = cell(0);
+198.	M_seq = [];
+199.	for i = 1:size(marking_opt,1)
+200.	    idx = find(marking_opt(i,:) == 1);
+201.	    M_set{i,1} = strcat('M_',num2str(idx));
+202.	    M_seq = [M_seq, strcat(M_set{i,1},',')];
+203.	end
+204.	disp('机器人需要走的最短路径长度为：')
+205.	disp(dist_min)
+206.	disp('机器人经过的最短路径库所顺序为：')
+207.	disp(M_seq(1:end-1))
+208.	disp('机器人经过的最短路径变迁序列为：')
+209.	disp(path_opt)

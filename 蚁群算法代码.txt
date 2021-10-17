@@ -1,0 +1,258 @@
+附录B 蚁群算法实现路径规划MATLAB代码
+1.	function main() 
+2.	G=[0 0 0 1 0 0; 
+3.	   0 1 0 0 0 0; 
+4.	   0 1 1 0 1 0; 
+5.	   0 0 0 0 1 0; 
+6.	   0 1 1 0 1 0; 
+7.	   0 0 0 0 0 0;];
+8.	MM=size(G,1);          % 总的空间为01矩阵，如果为1表示有障碍物 
+9.	Tau=ones(MM*MM,MM*MM);        % Tau 初始信息素矩阵
+10.	Tau=8.*Tau; 
+11.	K=100;                        %迭代次数（指蚂蚁出动多少波）
+12.	M=10;                         %蚂蚁个数
+13.	S=1 ;                         %最短路径的起始点
+14.	E=MM*MM;                      %最短路径的目的点
+15.	Alpha=1;                      % Alpha 表征信息素重要程度的参数
+16.	Beta=5;                       % Beta 表征启发式因子重要程度的参数
+17.	Rho=0.3 ;                     % Rho 信息素蒸发系数
+18.	Q=1;                          % Q 信息素增加强度系数 
+19.	minkl=inf; 
+20.	mink=0; 
+21.	minl=0; 
+22.	D=G2D(G); 
+23.	N=size(D,1);                 %N表示问题的规模（像素个数）
+24.	 a=1;                        %小方格像素的边长
+25.	 Ex=a*(mod(E,MM)-0.5);       %终止点横坐标
+26.	 if Ex==-0.5 
+27.	Ex=MM-0.5; 
+28.	end 
+29.	Ey=a*(MM+0.5-ceil(E/MM));   %终止点纵坐标
+30.	 Eta=zeros(N);          %启发式信息，取为至目标点的直线距离的倒数
+31.	 %%%%%%以下为启发式信息矩阵%%%%%%%%%%%
+32.	 for i=1:N 
+33.	 ix=a*(mod(i,MM)-0.5); 
+34.	   if ix==-0.5 
+35.	   ix=MM-0.5; 
+36.	   end 
+37.	iy=a*(MM+0.5-ceil(i/MM));  
+38.	   if i~=E 
+39.	   Eta(i)=1/((ix-Ex)^2+(iy-Ey)^2)^0.5; 
+40.	   else 
+41.	   Eta(i)=10; 
+42.	   end 
+43.	end 
+44.	ROUTES=cell(K,M);   %用细胞结构存储每一代的每一只蚂蚁的爬行路线
+45.	PL=zeros(K,M);       %用矩阵存储每一代的每一只蚂蚁的爬行路线长度
+46.	%%%%%%%启动K轮蚂蚁觅食活动，每轮派出M只蚂蚁%%%%%%%
+47.	for k=1:K 
+48.	for m=1:M 
+49.	%%%%%%%%%%%%状态初始化%%%%%%%%%%%%%%%%
+50.	W=S;                     %当前节点初始化为起始点
+51.	Path=S;                  %爬行路线初始化
+52.	PLkm=0;                  %爬行路线长度初始化
+53.	TABUkm=ones(N);          %禁忌表初始化
+54.	TABUkm(S)=0;             %已经在初始点了，因此要排除
+55.	DD=D;                    %邻接矩阵初始化
+56.	%%%%%%%%%%%下一步可以前往的节点%%%%%%%%%%
+57.	DW=DD(W,:); 
+58.	DW1=find(DW); 
+59.	for j=1:length(DW1) 
+60.	   if TABUkm(DW1(j))==0 
+61.	      DW(DW1(j))=0; 
+62.	  end 
+63.	end 
+64.	LJD=find(DW); 
+65.	Len_LJD=length(LJD);     %可选节点的个数
+66.	%%%%%%%%%%%%蚂蚁未遇到食物或者陷入死胡同或者觅食停止%%%%%%%%%%%
+67.	while W~=E&&Len_LJD>=1 
+68.	%%%%%%%%转轮赌法选择下一步怎么走%%%%%%%%%%%
+69.	PP=zeros(Len_LJD); 
+70.	for i=1:Len_LJD 
+71.	    PP(i)=(Tau(W,LJD(i))^Alpha)*((Eta(LJD(i)))^Beta); 
+72.	end 
+73.	sumpp=sum(PP); 
+74.	PP=PP/sumpp;            %建立概率分布
+75.	Pcum(1)=PP(1); 
+76.	  for i=2:Len_LJD 
+77.	  Pcum(i)=Pcum(i-1)+PP(i); 
+78.	  end 
+79.	Select=find(Pcum>=rand); 
+80.	to_visit=LJD(Select(1)); 
+81.	%%%%%%%%%%%%状态更新和记录%%%%%%%%%%%%
+82.	Path=[Path,to_visit];  %路径增加
+83.	PLkm=PLkm+DD(W,to_visit); %路径长度增加
+84.	W=to_visit;            %蚂蚁移到下一个节点
+85.	   for kk=1:N 
+86.	      if TABUkm(kk)==0 
+87.	      DD(W,kk)=0; 
+88.	      DD(kk,W)=0; 
+89.	      end 
+90.	   end 
+91.	TABUkm(W)=0;		   %已访问过的节点从禁忌表中删除
+92.	 DW=DD(W,:); 
+93.	DW1=find(DW); 
+94.	for j=1:length(DW1) 
+95.	    if TABUkm(DW1(j))==0 
+96.	       DW(j)=0; 
+97.	    end 
+98.	  end 
+99.	LJD=find(DW); 
+100.	Len_LJD=length(LJD);  %可选节点的个数
+101.	 end 
+102.	%%%%记下每一代每一只蚂蚁的觅食路线和路线长度%%%%%
+103.	 ROUTES{k,m}=Path; 
+104.	   if Path(end)==E 
+105.	      PL(k,m)=PLkm; 
+106.	      if PLkm<minkl 
+107.	          mink=k;minl=m;minkl=PLkm; 
+108.	      end 
+109.	   else 
+110.	      PL(k,m)=0; 
+111.	   end 
+112.	end 
+113.	%%%%%%%%%%%%%%更新信息素%%%%%%%%%%%%%%%%
+114.	Delta_Tau=zeros(N,N);%更新量初始化
+115.	   for m=1:M 
+116.	     if PL(k,m)  
+117.	        ROUT=ROUTES{k,m}; 
+118.	        TS=length(ROUT)-1;%跳数
+119.	         PL_km=PL(k,m); 
+120.	        for s=1:TS 
+121.	          x=ROUT(s); 
+122.	          y=ROUT(s+1); 
+123.	          Delta_Tau(x,y)=Delta_Tau(x,y)+Q/PL_km; 
+124.	          Delta_Tau(y,x)=Delta_Tau(y,x)+Q/PL_km; 
+125.	        end 
+126.	     end 
+127.	  end 
+128.	Tau=(1-Rho).*Tau+Delta_Tau;%信息素挥发一部分，新增加一部分
+ 
+129.	 end 
+130.	%    绘图    %
+131.	plotif=1;                %是否绘图的控制参数
+132.	 if plotif==1             %绘收敛曲线
+133.	    minPL=zeros(K); 
+134.	   for i=1:K 
+135.	     PLK=PL(i,:); 
+136.	     Nonzero=find(PLK); 
+137.	     PLKPLK=PLK(Nonzero); 
+138.	     minPL(i)=min(PLKPLK); 
+139.	   end 
+140.	figure(1) 
+141.	plot(minPL); 
+142.	hold on 
+143.	grid on 
+144.	title('收敛曲线变化趋势'); 
+145.	xlabel('迭代次数'); 
+146.	ylabel('最小路径长度');   %绘爬行图
+147.	figure(2) 
+148.	axis([0,MM,0,MM]) 
+149.	for i=1:MM 
+150.	for j=1:MM 
+151.	if G(i,j)==1 
+152.	x1=j-1;y1=MM-i; 
+153.	x2=j;y2=MM-i; 
+154.	x3=j;y3=MM-i+1; 
+155.	x4=j-1;y4=MM-i+1; 
+156.	fill([x1,x2,x3,x4],[y1,y2,y3,y4],[0.2,0.2,0.2]); 
+157.	hold on 
+158.	else 
+159.	x1=j-1;y1=MM-i; 
+160.	x2=j;y2=MM-i; 
+161.	x3=j;y3=MM-i+1; 
+162.	x4=j-1;y4=MM-i+1; 
+163.	fill([x1,x2,x3,x4],[y1,y2,y3,y4],[1,1,1]); 
+164.	hold on 
+165.	end 
+166.	end 
+167.	end 
+168.	hold on 
+169.	title('最优运动轨迹'); 
+170.	xlabel('坐标x'); 
+171.	ylabel('坐标y');
+172.	ROUT=ROUTES{mink,minl}; 
+173.	LENROUT=length(ROUT); 
+174.	Rx=ROUT; 
+175.	Ry=ROUT; 
+176.	for ii=1:LENROUT 
+177.	Rx(ii)=a*(mod(ROUT(ii),MM)-0.5); 
+178.	if Rx(ii)==-0.5 
+179.	Rx(ii)=MM-0.5; 
+180.	end 
+181.	Ry(ii)=a*(MM+0.5-ceil(ROUT(ii)/MM)); 
+182.	end 
+183.	plot(Rx,Ry) 
+184.	end 
+185.	plotif2=0;                      %绘各代蚂蚁爬行图
+186.	if plotif2==1 
+187.	figure(3) 
+188.	axis([0,MM,0,MM]) 
+189.	for i=1:MM 
+190.	for j=1:MM 
+191.	if G(i,j)==1 
+192.	x1=j-1;y1=MM-i; 
+193.	x2=j;y2=MM-i; 
+194.	x3=j;y3=MM-i+1; 
+195.	x4=j-1;y4=MM-i+1; 
+196.	fill([x1,x2,x3,x4],[y1,y2,y3,y4],[0.2,0.2,0.2]); 
+197.	hold on 
+198.	else 
+199.	x1=j-1;y1=MM-i; 
+200.	x2=j;y2=MM-i; 
+201.	x3=j;y3=MM-i+1; 
+202.	x4=j-1;y4=MM-i+1; 
+203.	fill([x1,x2,x3,x4],[y1,y2,y3,y4],[1,1,1]); 
+204.	hold on 
+205.	end 
+206.	end 
+207.	end 
+208.	for k=1:K 
+209.	PLK=PL(k,:); 
+210.	minPLK=min(PLK); 
+211.	pos=find(PLK==minPLK); 
+212.	m=pos(1); 
+213.	ROUT=ROUTES{k,m}; 
+214.	LENROUT=length(ROUT); 
+215.	Rx=ROUT; 
+216.	Ry=ROUT; 
+217.	for ii=1:LENROUT 
+218.	Rx(ii)=a*(mod(ROUT(ii),MM)-0.5); 
+219.	if Rx(ii)==-0.5 
+220.	Rx(ii)=MM-0.5; 
+221.	end 
+222.	Ry(ii)=a*(MM+0.5-ceil(ROUT(ii)/MM)); 
+223.	end 
+224.	plot(Rx,Ry) 
+225.	hold on 
+226.	end 
+227.	end 
+228.	function D=G2D(G) 
+229.	l=size(G,1); 
+230.	D=zeros(l*l,l*l); 
+231.	for i=1:l 
+232.	    for j=1:l 
+233.	        if G(i,j)==0 
+234.	            for m=1:l 
+235.	                for n=1:l 
+236.	                    if G(m,n)==0 
+237.	                        im=abs(i-m);jn=abs(j-n); 
+238.	                        if im+jn==1||(im==1&&jn==1) 
+239.	                        D((i-1)*l+j,(m-1)*l+n)=(im+jn)^0.5; 
+240.	                        end 
+241.	                    end 
+242.	                end 
+243.	            end 
+244.	        end 
+245.	    end 
+246.	end
+
+
+
+
+
+
+
+
+
+ 
